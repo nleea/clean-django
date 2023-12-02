@@ -1,0 +1,48 @@
+version: "3"
+
+services:
+  clean-server:
+    build:
+      context: ./..
+      dockerfile: ./docker/Dockerfile
+    environment:
+      - DJANGO_ENV=development
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../:/app/
+    networks:
+      - clean-local
+    depends_on:
+      db-p:
+        condition: service_started
+      cache:
+        condition: service_healthy
+
+  db-p:
+    image: postgres
+    # restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_DB: forex
+    networks:
+      - clean-local
+  cache:
+    image: redis
+    expose:
+      - 6379
+    ports:
+      - "6380:6379"
+    networks:
+      - clean-local
+    healthcheck:
+      test: redis-cli ping
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+networks:
+  clean-local:
